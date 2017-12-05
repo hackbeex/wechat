@@ -1,0 +1,25 @@
+{
+    "name": "hackbeex/light-wechat",
+    "description": "make wechat package light",
+    "keywords": [
+        "wechat",
+        "weixin",
+        "sdk"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Hackbee",
+            "email": "hackbee@outlook.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "LightWechat\\": "src/"
+        }
+    }
+}
