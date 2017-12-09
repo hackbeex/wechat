@@ -29,34 +29,18 @@ class OpenPlatform extends WxCommon
      */
     protected $options = [];
 
-    /**
-     * @var self 单例
-     */
-    static private $instance = null;
-
-
-    protected function __construct($options = null)
+    public function __construct($options = null)
     {
         parent::__construct();
 
         $options && $this->options = $options;
     }
-    
-    /**
-     * 获取实例
-     * @param array $options
-     * @return self
-     */
-    static public function getInstance($options = null)
-    {
-        if (!self::$instance) {
-            self::$instance = new self($options);
-        }
 
-        $options && self::$instance->options = $options;
-        return self::$instance;
+    public function getOptions()
+    {
+        return $this->options;
     }
-    
+
     /**
      * 获取第三方平台令牌（组件方令牌）
      * 详见：https://open.weixin.qq.com/cgi-bin/showdocument?action=dir_list&t=resource/res_list&verify=1&id=open1453779503&token=&lang=zh_CN
@@ -64,12 +48,8 @@ class OpenPlatform extends WxCommon
      */
     public function getComponentAccessToken()
     {
-        if (empty($this->options)) {
-            $this->setError("第三方平台信息未配置");
-            return false;
-        }
-
-        $accessToken = $this->cache->get('component_access_token');
+        $key = $this->options['appid'].':access_token';
+        $accessToken = $this->getCache()->get($key);
         if ($accessToken) {
             return $accessToken;
         }
@@ -82,11 +62,11 @@ class OpenPlatform extends WxCommon
         $url = "https://api.weixin.qq.com/cgi-bin/component/api_component_token";
         $return = $this->requestAndCheck($url, 'POST', $post);
         if ($return === false) {
-            $this->cache->delete('component_access_token');
+            $this->getCache()->delete($key);
             return false;
         }
 
-        $this->cache->set('component_access_token', $return['component_access_token'], 7200 - 20);
+        $this->getCache()->set($key, $return['component_access_token'], 7200 - 20);
         
         return $return['component_access_token'];
     }

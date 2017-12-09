@@ -39,32 +39,11 @@ class OfficialAccount extends WxCommon
      */
     protected $options = [];
 
-    /**
-     * @var self 单例
-     */
-    static private $instance = null;
-
-
-    protected function __construct($options = null)
+    public function __construct($options)
     {
         parent::__construct();
 
         $options && $this->options = $options;
-    }
-
-    /**
-     * 获取实例
-     * @param array $options
-     * @return self
-     */
-    static public function getInstance($options = null)
-    {
-        if (!self::$instance) {
-            self::$instance = new self($options);
-        }
-
-        $options && self::$instance->options = $options;
-        return self::$instance;
     }
 
     /**
@@ -73,13 +52,8 @@ class OfficialAccount extends WxCommon
      */
     public function getAccessToken()
     {
-        $options = $this->options;
-        if (empty($options)) {
-            $this->setError("公众号未配置");
-            return false;
-        }
-
-        $accessToken = $this->cache->get('access_token');
+        $key = $this->options['appid'].':access_token';
+        $accessToken = $this->getCache()->get($key);
         if ($accessToken) {
            return $accessToken;
         }
@@ -93,11 +67,11 @@ class OfficialAccount extends WxCommon
         $url = "https://api.weixin.qq.com/cgi-bin/token?{$gets}";
         $return = $this->requestAndCheck($url);
         if ( ! isset($return['access_token'])) {
-            $this->cache->delete('access_token');
+            $this->getCache()->delete($key);
             return false;
         }
 
-        $this->cache->set('access_token', $return['access_token'], 7200 - 20);
+        $this->getCache()->set($key, $return['access_token'], 7200 - 20);
         
         return $return['access_token'];
     }

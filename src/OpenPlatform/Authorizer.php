@@ -1,9 +1,6 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: how
- * Date: 2017/12/9
- * Time: 11:22
+ * Author: Hackbee
  */
 
 namespace LightWechat\OpenPlatform;

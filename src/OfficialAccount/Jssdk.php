@@ -16,7 +16,7 @@ trait Jssdk
      */
     public function getTicket($type = 'jsapi')
     {
-        $key = 'weixin_ticket_'.$type;
+        $key = $this->options['appid'].':weixin_ticket_'.$type;
         $ticket = $this->getCache()->get($key);
         if (!empty($ticket)) {
             return $ticket;
