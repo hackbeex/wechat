@@ -5,12 +5,58 @@
 
 namespace LightWechat\Core;
 
+use LightWechat\Utils\Request;
+use LightWechat\Utils\FileCache;
+
+
 class WxCommon
 {
-    protected $errorMsg = '微信默认错误信息';  //错误字符串信息
-    protected $debug = false;   //是否开启调试
-    protected $isLogFile = false; //是否记录错误到文本
-    protected $logFile = "./wechat-debug.log"; //记录错误的文本路径
+    /**
+     * @var string 错误字符串信息
+     */
+    protected $errorMsg = '微信默认错误信息';
+
+    /**
+     * @var bool 是否开启调试
+     */
+    protected $debug = false;
+
+    /**
+     * @var bool 是否记录错误到文本
+     */
+    protected $isLogFile = false;
+
+    /**
+     * @var string 记录错误的文本路径
+     */
+    protected $logFile = "./wechat-debug.log";
+
+    /**
+     * @var Request http请求类
+     */
+    protected $request;
+
+    /**
+     * 缓存数据
+     * @var FileCache
+     */
+    protected $cache;
+
+
+    protected function __construct()
+    {
+        $this->request = new Request;
+
+        $this->cache = new FileCache('light-wechat.cache', get_called_class());
+    }
+
+    /**
+     * @return FileCache
+     */
+    protected function getCache()
+    {
+        return $this->cache;
+    }
 
     public function getError() 
     {
@@ -29,6 +75,11 @@ class WxCommon
     {
         return $this->debug;
     }
+
+    public function setLogFile($logFile)
+    {
+        $this->logFile = $logFile;
+    }
     
     public function logDebugFile($content)
     {
@@ -41,75 +92,6 @@ class WxCommon
         }
         file_put_contents($this->logFile, date('Y-m-d H:i:s').' -- '.$content."\n", FILE_APPEND);
     }
-    
-    /**
-     * http请求
-     * @param string $url
-     * @param string $method
-     * @param string|array $fields
-     * @return string
-     */
-    protected function httpRequest($url, $method = 'GET', $fields = [])
-    {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-
-        $method = strtoupper($method);
-        if ($method == 'GET' && !empty($fields)) {
-            is_array($fields) && $fields = http_build_query($fields);
-            $url = $url . (strpos($url,"?")===false ? "?" : "&") . $fields;
-        }
-        curl_setopt($ch, CURLOPT_URL, $url);
-
-        if ($method != 'GET') {
-            $hadFile = false;
-            curl_setopt($ch, CURLOPT_POST, true);
-            if (!empty($fields)) {
-                if (is_array($fields)) {
-                    /* 支持文件上传 */
-                    if (class_exists('\CURLFile')) {
-                        curl_setopt($ch, CURLOPT_SAFE_UPLOAD, true);
-                        foreach ($fields as $key => $value) {
-                            if ($this->isPostHasFile($value)) {
-                                $fields[$key] = new \CURLFile(realpath(ltrim($value, '@')));
-                                $hadFile = true;
-                            }
-                        }
-                    } elseif (defined('CURLOPT_SAFE_UPLOAD')) {
-                        foreach ($fields as $key => $value) {
-                            if ($this->isPostHasFile($value)) {
-                                curl_setopt($ch, CURLOPT_SAFE_UPLOAD, false);
-                                $hadFile = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-                $fields = (!$hadFile && is_array($fields)) ? http_build_query($fields) : $fields;
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $fields);
-            }
-        }
-
-        /* 关闭https验证 */
-        if ("https" == substr($url, 0, 5)) {
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        }
-
-        $content = curl_exec($ch);
-        curl_close($ch);
-
-        return $content;
-    }
-    
-    protected function isPostHasFile($value)
-    {
-        if (is_string($value) && strpos($value, '@') === 0 && is_file(realpath(ltrim($value, '@')))) {
-            return true;
-        }
-        return false;
-    }
 
     /**
      * 请求并对结果进行初步检查
@@ -121,7 +103,7 @@ class WxCommon
      */
     protected function requestAndCheck($url, $method = 'GET', $fields = [], $result_json = true)
     {
-        $return = $this->httpRequest($url, $method, $fields);
+        $return = $this->request->httpRequest($url, $method, $fields);
         if ($return === false) {
             $this->setError("http请求出错！");
             return false;

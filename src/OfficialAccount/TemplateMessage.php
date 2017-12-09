@@ -6,7 +6,7 @@
 namespace LightWechat\OfficialAccount;
 
 
-trait Template
+trait TemplateMessage
 {
     /**
      * 获取用户所有模板消息
